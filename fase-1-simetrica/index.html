@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fase 1: AES-GCM</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Fase 1: criptografia simétrica</h1>
+    <p class="aviso">Projeto educativo. Não uses isto para proteger dados reais.</p>
+
+    <section>
+      <label for="texto">Texto</label>
+      <textarea id="texto" rows="4">Olá, mundo</textarea>
+
+      <label for="password">Password</label>
+      <input id="password" type="text" value="password-de-teste" autocomplete="off">
+
+      <div class="botoes">
+        <button id="encriptar">Encriptar</button>
+        <button id="decriptar">Decriptar</button>
+        <button id="adulterar" class="secundario">Alterar 1 byte do cifrado</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Pacote (versão.salt.iv.cifrado, em base64)</h2>
+      <textarea id="pacote" rows="5" spellcheck="false"></textarea>
+      <h2>Detalhes</h2>
+      <pre id="detalhes">Ainda sem dados. Carrega em Encriptar.</pre>
+    </section>
+
+    <section>
+      <h2>Resultado</h2>
+      <pre id="resultado"></pre>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

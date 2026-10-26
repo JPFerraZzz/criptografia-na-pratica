@@ -1,0 +1,10 @@
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+# chaves e ficheiros gerados nos testes
+*.pem
+*.key
+*.enc
+*.sig
+*.asc

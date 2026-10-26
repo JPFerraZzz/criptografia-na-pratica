@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Criptografia na Prática</title>
+<meta name="description" content="Estudo autodidata de criptografia, do AES ao PGP, com demonstrações que correm no browser.">
+<style>
+  :root {
+    --bg: #f3efe6;
+    --ink: #1c1b18;
+    --muted: #6b675d;
+    --line: #cfc8b6;
+    --accent: #b3361b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14130f;
+      --ink: #ece7d9;
+      --muted: #9a9482;
+      --line: #36332a;
+      --accent: #e8664a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 Georgia, "Iowan Old Style", "Times New Roman", serif;
+  }
+  main { max-width: 44rem; margin: 0 auto; padding: 4rem 1rem 5rem; }
+  h1 {
+    font: 700 clamp(2rem, 7vw, 3.2rem)/1.05 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.2rem;
+  }
+  h1 span { color: var(--accent); }
+  p { margin: 0 0 1rem; max-width: 36rem; }
+  .aviso {
+    border-left: 3px solid var(--accent);
+    padding: 0.2rem 0 0.2rem 1rem;
+    color: var(--muted);
+    margin: 2rem 0 3rem;
+    font-size: 0.95rem;
+  }
+  ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  li { border-bottom: 1px solid var(--line); }
+  li a, li .off {
+    display: grid;
+    grid-template-columns: 3rem 1fr auto;
+    gap: 0.5rem 1rem;
+    padding: 1.1rem 0;
+    color: inherit;
+    text-decoration: none;
+  }
+  .n { font: 600 0.95rem ui-monospace, Menlo, Consolas, monospace; color: var(--accent); padding-top: 0.2rem; }
+  .t { font-weight: 700; }
+  .d { grid-column: 2; color: var(--muted); font-size: 0.95rem; }
+  .s { font: 0.8rem ui-monospace, Menlo, Consolas, monospace; color: var(--muted); padding-top: 0.25rem; }
+  li a:hover .t, li a:focus-visible .t { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 4px; }
+  li a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .off { opacity: 0.55; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: inherit; }
+  @media (max-width: 30rem) {
+    li a, li .off { grid-template-columns: 2.2rem 1fr; }
+    .s { grid-column: 2; padding: 0; }
+    .d { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Criptografia <span>na Prática</span></h1>
+  <p>Estudo autodidata de criptografia, escrito por quem está a aprender. Cada fase tem uma demonstração que corre no teu browser e uma explicação do que está a acontecer por baixo.</p>
+
+  <p class="aviso">Material educativo. Não uses isto para proteger dados reais. Nada sai da tua máquina: não há servidor, as chaves e os textos ficam no browser.</p>
+
+  <ol>
+    <li>
+      <span class="off">
+        <span class="n">01</span>
+        <span class="t">Simétrica</span>
+        <span class="s">em breve</span>
+        <span class="d">AES-GCM, chave derivada de password, e o que acontece quando alteras um byte.</span>
+      </span>
+    </li>
+    <li>
+      <span class="off">
+        <span class="n">02</span>
+        <span class="t">Assimétrica</span>
+        <span class="s">em breve</span>
+        <span class="d">Par de chaves, encriptação, assinaturas e porque o RSA não encripta ficheiros grandes.</span>
+      </span>
+    </li>
+    <li>
+      <span class="off">
+        <span class="n">03</span>
+        <span class="t">Híbrida</span>
+        <span class="s">em breve</span>
+        <span class="d">AES para a mensagem, chave pública para a chave AES. A ideia por trás do PGP e do TLS.</span>
+      </span>
+    </li>
+    <li>
+      <span class="off">
+        <span class="n">04</span>
+        <span class="t">PGP a sério</span>
+        <span class="s">em breve</span>
+        <span class="d">OpenPGP.js, comparado com o que foi feito à mão na fase 3.</span>
+      </span>
+    </li>
+    <li>
+      <span class="off">
+        <span class="n">05</span>
+        <span class="t">O que corre mal</span>
+        <span class="s">em breve</span>
+        <span class="d">IV repetido, modo ECB, passwords fracas, chaves curtas. Só sobre dados teus.</span>
+      </span>
+    </li>
+  </ol>
+
+  <footer>
+    Ponto de partida: <em>Técnicas para Hackers: Soluções para Segurança</em>, Wilson Oliveira (Centro Atlântico). Método, correções e fontes no README do repositório.
+  </footer>
+</main>
+</body>
+</html>
