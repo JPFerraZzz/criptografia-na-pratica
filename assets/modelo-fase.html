@@ -1,0 +1,75 @@
+<!doctype html>
+<!--
+  MODELO PARA UMA NOVA FASE
+  1. Copia este ficheiro para a pasta da fase (por exemplo fase-2-assimetrica/index.html).
+  2. Muda o título, o número da fase e o texto da introdução.
+  3. À esquerda (.lab) põe os campos e botões da fase. À direita (.guia) escreve um <li class="passo"> por cada coisa que o utilizador faz.
+  4. No teu app.js, chama passo("id-do-passo") quando o utilizador carregar num botão e mostrar("nome", valor) para preencher os elementos com data-live="nome".
+  5. No fim, ativa a fase no menu da index.html da raiz e atualiza o estado no README.
+-->
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fase N: nome da fase | Criptografia na Prática</title>
+  <link rel="stylesheet" href="../assets/fase.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a href="../">← Índice</a>
+      <span class="pos">Fase N de 5</span>
+    </div>
+  </header>
+
+  <main class="fase">
+    <div class="cabecalho">
+      <h1><span>0N</span> Nome da fase</h1>
+      <p>Uma ou duas frases a dizer o que se aprende aqui. Material educativo: não uses isto para proteger dados reais.</p>
+    </div>
+
+    <!-- ESQUERDA: laboratório -->
+    <div class="lab">
+      <section class="bloco">
+        <h2><b>A</b>Entrada</h2>
+        <label for="entrada">Campo</label>
+        <textarea id="entrada" rows="4"></textarea>
+        <div class="botoes">
+          <button id="acao">Fazer a coisa</button>
+          <button id="outra" class="secundario">Outra ação</button>
+        </div>
+      </section>
+
+      <section class="bloco">
+        <h2><b>B</b>Resultado</h2>
+        <!-- data-estado="ok" ou "erro" muda a cor -->
+        <pre id="resultado" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <!-- DIREITA: guia -->
+    <aside class="guia" aria-label="Passo a passo">
+      <h2 class="titulo-guia">Passo a passo</h2>
+      <ol class="passos">
+        <li class="passo" data-passo="primeiro">
+          <h3>O que o utilizador faz neste passo</h3>
+          <div class="corpo">
+            <p>O que acontece, explicado para quem nunca viu isto.</p>
+            <p class="por-dentro"><span class="etq">Por dentro</span>O que o código faz por baixo e porquê.</p>
+            <pre class="codigo">// o excerto de código relevante</pre>
+            <!-- valores que mudam em tempo real: <dd data-live="nome">(valor)</dd> -->
+          </div>
+        </li>
+      </ol>
+
+      <nav class="rodape-fase" aria-label="Navegação entre fases">
+        <a href="../">← Índice</a>
+        <span class="off">Próxima fase (em breve)</span>
+      </nav>
+    </aside>
+  </main>
+
+  <script src="../assets/fase.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

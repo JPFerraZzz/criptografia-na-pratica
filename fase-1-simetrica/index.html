@@ -3,40 +3,149 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fase 1: AES-GCM</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Fase 1: criptografia simétrica | Criptografia na Prática</title>
+  <link rel="stylesheet" href="../assets/fase.css">
 </head>
 <body>
-  <main>
-    <h1>Fase 1: criptografia simétrica</h1>
-    <p class="aviso">Projeto educativo. Não uses isto para proteger dados reais.</p>
+  <header class="topo">
+    <div class="topo-in">
+      <a href="../">← Índice</a>
+      <span class="pos">Fase 1 de 5</span>
+    </div>
+  </header>
 
-    <section>
-      <label for="texto">Texto</label>
-      <textarea id="texto" rows="4">Olá, mundo</textarea>
+  <main class="fase">
+    <div class="cabecalho">
+      <h1><span>01</span> Criptografia simétrica</h1>
+      <p>Uma chave encripta e a mesma chave decripta. Aqui a chave nasce de uma password. Escreve à esquerda, lê à direita o que está a acontecer. Material educativo: não uses isto para proteger dados reais.</p>
+    </div>
 
-      <label for="password">Password</label>
-      <input id="password" type="text" value="password-de-teste" autocomplete="off">
+    <!-- ESQUERDA: laboratório -->
+    <div class="lab">
+      <section class="bloco">
+        <h2><b>A</b>Entrada</h2>
+        <label for="texto">Texto</label>
+        <textarea id="texto" rows="4">Olá, mundo</textarea>
 
-      <div class="botoes">
-        <button id="encriptar">Encriptar</button>
-        <button id="decriptar">Decriptar</button>
-        <button id="adulterar" class="secundario">Alterar 1 byte do cifrado</button>
-      </div>
-    </section>
+        <label for="password">Password</label>
+        <input id="password" type="text" value="password-de-teste" autocomplete="off" spellcheck="false">
 
-    <section>
-      <h2>Pacote (versão.salt.iv.cifrado, em base64)</h2>
-      <textarea id="pacote" rows="5" spellcheck="false"></textarea>
-      <h2>Detalhes</h2>
-      <pre id="detalhes">Ainda sem dados. Carrega em Encriptar.</pre>
-    </section>
+        <div class="botoes">
+          <button id="encriptar">Encriptar</button>
+          <button id="decriptar">Decriptar</button>
+          <button id="adulterar" class="secundario">Alterar 1 byte do cifrado</button>
+        </div>
+      </section>
 
-    <section>
-      <h2>Resultado</h2>
-      <pre id="resultado"></pre>
-    </section>
+      <section class="bloco">
+        <h2><b>B</b>Pacote (versão.salt.iv.cifrado, em base64)</h2>
+        <textarea id="pacote" rows="5" spellcheck="false" aria-label="Pacote cifrado"></textarea>
+      </section>
+
+      <section class="bloco">
+        <h2><b>C</b>Detalhes</h2>
+        <pre id="detalhes">Ainda sem dados. Carrega em Encriptar.</pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>D</b>Resultado</h2>
+        <pre id="resultado" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <!-- DIREITA: guia -->
+    <aside class="guia" aria-label="Passo a passo">
+      <h2 class="titulo-guia">Passo a passo</h2>
+      <ol class="passos">
+
+        <li class="passo" data-passo="entrada">
+          <h3>Escolhe o texto e a password</h3>
+          <div class="corpo">
+            <p>Escreve qualquer texto no campo <em>Texto</em> e uma password no campo <em>Password</em>. A password é o único segredo desta fase. A chave não é guardada em lado nenhum: quem souber a password consegue refazê-la, e quem não souber não tem nada.</p>
+            <p class="por-dentro"><span class="etq">Por dentro</span>A password não serve diretamente como chave. O AES-256 precisa de 32 bytes aleatórios e uma password tem poucos caracteres previsíveis. O passo seguinte resolve isso.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="encriptar">
+          <h3>Carrega em Encriptar</h3>
+          <div class="corpo">
+            <p>O browser faz quatro coisas, por esta ordem:</p>
+            <ol class="sub" type="a">
+              <li>Primeiro o salt: 16 bytes aleatórios. Não é secreto e vai dentro do pacote. Serve para a mesma password dar uma chave diferente de cada vez.</li>
+              <li>Depois a chave: o PBKDF2 mistura a password com o salt 600 000 vezes (SHA-256) e produz a chave AES de 256 bits. As repetições tornam cada tentativa lenta, e isso pesa muito a quem testa passwords às centenas de milhar.</li>
+              <li>Em seguida o IV, 12 bytes aleatórios, novos em cada mensagem. Nunca se pode repetir com a mesma chave (a fase 5 mostra o desastre).</li>
+              <li>Por fim o AES-GCM cifra o texto e calcula uma etiqueta de 16 bytes que garante que ninguém mexeu nos dados. A etiqueta fica colada ao fim do cifrado.</li>
+            </ol>
+            <pre class="codigo">const salt  = crypto.getRandomValues(new Uint8Array(16));
+const chave = await derivarChave(password, salt); // PBKDF2 → AES-256
+const iv    = crypto.getRandomValues(new Uint8Array(12));
+const cifrado = await crypto.subtle.encrypt(
+  { name: "AES-GCM", iv }, chave, texto);</pre>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="pacote">
+          <h3>Lê o pacote</h3>
+          <div class="corpo">
+            <p>O pacote tem quatro partes separadas por pontos: a versão do formato, o salt, o IV e o cifrado. Está em base64, que é só uma maneira de escrever bytes como texto copiável. O base64 não protege nada.</p>
+            <p>Quem recebe o pacote precisa dele inteiro mais a password. O salt e o IV viajam à vista, e isso não faz mal, porque o segredo é a password. Os valores desta encriptação:</p>
+            <dl class="valores">
+              <dt>Salt (16 bytes, hex)</dt>
+              <dd data-live="salt">(carrega em Encriptar)</dd>
+              <dt>IV (12 bytes, hex)</dt>
+              <dd data-live="iv">(carrega em Encriptar)</dd>
+              <dt>Texto cifrado (hex)</dt>
+              <dd data-live="cifrado">(carrega em Encriptar)</dd>
+              <dt>Etiqueta GCM (16 bytes, hex)</dt>
+              <dd data-live="etiqueta">(carrega em Encriptar)</dd>
+            </dl>
+            <p class="por-dentro"><span class="etq">Experimenta</span>Encripta o mesmo texto outra vez. O salt, o IV e todo o cifrado mudam, apesar de o texto e a password serem iguais.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="decriptar">
+          <h3>Carrega em Decriptar</h3>
+          <div class="corpo">
+            <p>O caminho inverso. O browser lê o salt do pacote, refaz a chave com a mesma password e pede ao AES-GCM para decifrar. Antes de devolver o texto, o GCM recalcula a etiqueta e compara com a que veio no pacote. Só se coincidirem é que sai o texto.</p>
+            <pre class="codigo">const claro = await crypto.subtle.decrypt(
+  { name: "AES-GCM", iv }, chave, cifrado);</pre>
+            <p class="por-dentro"><span class="etq">Experimenta</span>Muda uma letra da password e decripta. Falha. Com a password errada a chave é outra, a etiqueta não bate certo e o GCM recusa.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="adulterar">
+          <h3>Altera 1 byte e decripta outra vez</h3>
+          <div class="corpo">
+            <p>O botão inverte um bit do primeiro byte do cifrado, como se alguém tivesse mexido no pacote pelo caminho. Carrega em Decriptar a seguir: falha, e não devolve texto estragado.</p>
+            <p class="por-dentro"><span class="etq">Por dentro</span>Esta é a diferença entre cifrar e cifrar com autenticação. Numa cifra sem etiqueta (o CBC, por exemplo), a alteração passava sem aviso e o texto saía corrompido. O erro é o mesmo para password errada e para dados alterados, de propósito: não dá pistas a quem ataca.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="experiencias">
+          <h3>Experiências para fazer sozinho</h3>
+          <div class="corpo">
+            <ol class="sub">
+              <li>Apaga um dos pontos do pacote e decripta. Que erro aparece?</li>
+              <li>Encripta com a password <code>123</code>. O AES continua forte, mas a chave deixa de ser. Porquê? (a fase 5 mostra como se quebra)</li>
+              <li>No <code>app.js</code>, muda <code>ITERACOES</code> para 1000 e mede quanto demora a encriptar. Volta a pôr 600000.</li>
+              <li>Tenta explicar a um amigo porque é que o salt pode ser público e a password não.</li>
+            </ol>
+            <p>O problema que esta fase deixa por resolver é a distribuição: como passas a password a outra pessoa sem alguém a intercetar? A fase 2 ataca isso.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h2 class="titulo-guia" style="margin-top:2.2rem">Em resumo</h2>
+      <p>A chave são os 32 bytes que o AES usa para cifrar e decifrar, e aqui nascem da password. O salt e o IV são bytes aleatórios e públicos, o primeiro misturado com a password antes de fazer a chave e o segundo diferente em cada mensagem. A etiqueta GCM são os 16 bytes finais que provam que o cifrado não foi alterado. O base64 só escreve bytes como letras e números e não cifra nada.</p>
+
+      <nav class="rodape-fase" aria-label="Navegação entre fases">
+        <a href="../">← Índice</a>
+        <span class="off">Fase 2, assimétrica (em breve)</span>
+      </nav>
+    </aside>
   </main>
+
+  <script src="../assets/fase.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

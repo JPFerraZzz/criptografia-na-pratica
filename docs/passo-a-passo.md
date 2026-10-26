@@ -15,11 +15,21 @@ A estrutura já existe (pastas, README, LICENSE MIT, docs, `index.html` da raiz,
 
 Tudo em HTML, CSS e JavaScript puro, sem build e sem dependências (exceto a OpenPGP.js na fase 4).
 
+## Layout das páginas das fases
+
+Todas as fases usam o mesmo esqueleto, com o laboratório à esquerda (onde escreves e carregas nos botões) e o guia passo a passo à direita (o que fazes e o que acontece por dentro). Em ecrãs estreitos o guia passa para baixo. Os ficheiros partilhados estão em `assets/`:
+
+- `fase.css`: o aspeto, igual ao da página inicial (claro e escuro conforme o sistema).
+- `fase.js`: `marcarPasso("id")` destaca o passo ativo no guia e marca os anteriores como feitos, e `mostrarValor("nome", valor)` preenche no guia os valores reais da execução (salt, IV, etc.).
+- `modelo-fase.html`: o ponto de partida para cada fase nova. Copia-o para a pasta da fase e segue os comentários no topo.
+
+Cada fase escreve o seu próprio `app.js` e liga-o ao guia com essas duas funções.
+
 ## Fase 1: simétrica (AES-GCM)
 
 Objetivo: perceber o que é chave, IV, salt e etiqueta de autenticação, e porque o GCM deteta alterações.
 
-Esta fase já tem uma versão escrita pelo Claude (`app.js`, `index.html`, `style.css` e um README). Duas opções:
+Esta fase já tem uma versão escrita pelo Claude (`app.js`, `index.html` e um README). Duas opções:
 
 - Ler e correr o que existe, fazer as experiências do README da fase e passar a linha a linha do `app.js` até conseguires explicar cada uma.
 - Apagar o `app.js` e reescrevê-lo sozinho a partir dos passos abaixo, usando a versão existente só para comparar no fim.

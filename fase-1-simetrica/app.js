@@ -67,8 +67,16 @@ function montarPacote({ salt, iv, cifrado }) {
 
 const $ = (id) => document.getElementById(id);
 
+// Ligação ao guia da página (ver ../assets/fase.js). Se não existir, não faz nada.
+const passo = (...ids) => window.marcarPasso && window.marcarPasso(...ids);
+const mostrar = (nome, texto) => window.mostrarValor && window.mostrarValor(nome, texto);
+
+const paraHex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+const curto = (hex, max = 48) => (hex.length > max ? hex.slice(0, max) + "…" : hex);
+
 $("encriptar").addEventListener("click", async () => {
   $("resultado").textContent = "";
+  $("resultado").dataset.estado = "";
   try {
     const r = await encriptar($("texto").value, $("password").value);
     $("pacote").value = montarPacote(r);
@@ -78,7 +86,14 @@ $("encriptar").addEventListener("click", async () => {
       `cifrado: ${r.cifrado.length} bytes ` +
       `(${r.cifrado.length - 16} de texto + 16 da etiqueta de autenticação GCM)\n` +
       `iterações PBKDF2: ${ITERACOES}`;
+    const nTexto = r.cifrado.length - 16;
+    mostrar("salt", paraHex(r.salt));
+    mostrar("iv", paraHex(r.iv));
+    mostrar("cifrado", `${nTexto} bytes: ` + curto(paraHex(r.cifrado.slice(0, nTexto))));
+    mostrar("etiqueta", paraHex(r.cifrado.slice(nTexto)));
+    passo("entrada", "encriptar", "pacote");
   } catch (e) {
+    $("resultado").dataset.estado = "erro";
     $("resultado").textContent = "Erro ao encriptar: " + e.message;
   }
 });
@@ -86,10 +101,14 @@ $("encriptar").addEventListener("click", async () => {
 $("decriptar").addEventListener("click", async () => {
   try {
     $("resultado").textContent = "Decriptado com sucesso:\n" + (await decriptar($("pacote").value, $("password").value));
+    $("resultado").dataset.estado = "ok";
+    passo("decriptar");
   } catch (e) {
     // O GCM não distingue password errada de dados alterados: ambos falham a autenticação.
+    $("resultado").dataset.estado = "erro";
     $("resultado").textContent =
       "Falhou. Password errada ou dados alterados (o GCM rejeitou a autenticação).\n" + e.message;
+    passo("decriptar");
   }
 });
 
@@ -97,6 +116,7 @@ $("decriptar").addEventListener("click", async () => {
 $("adulterar").addEventListener("click", () => {
   const partes = $("pacote").value.trim().split(".");
   if (partes.length !== 4) {
+    $("resultado").dataset.estado = "erro";
     $("resultado").textContent = "Encripta primeiro.";
     return;
   }
@@ -104,5 +124,7 @@ $("adulterar").addEventListener("click", () => {
   bytes[0] ^= 1;
   partes[3] = paraB64(bytes);
   $("pacote").value = partes.join(".");
+  $("resultado").dataset.estado = "";
   $("resultado").textContent = "Alterei 1 bit. Carrega em Decriptar e vê o que acontece.";
+  passo("adulterar");
 });
