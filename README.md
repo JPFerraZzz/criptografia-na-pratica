@@ -20,10 +20,10 @@ Isto é material educativo. Não uses nenhum código deste repositório para pro
 |---|---|---|
 | `docs/` | Resumo do capítulo, correções ao resumo e passo a passo | em revisão |
 | `fase-1-simetrica/` | AES-GCM com Web Crypto API, chave derivada de password | escrita com Claude, por rever e testar |
-| `fase-2-assimetrica/` | Par de chaves, encriptação e assinaturas | por fazer |
-| `fase-3-hibrida/` | AES para a mensagem, chave pública para a chave AES | por fazer |
-| `fase-4-pgp/` | OpenPGP.js e comparação com a fase 3 | por fazer |
-| `fase-5-o-que-corre-mal/` | IV repetido, modo ECB, passwords fracas, chaves curtas | por fazer |
+| `fase-2-assimetrica/` | RSA-OAEP, limite de tamanho, assinaturas ECDSA | escrita com Claude, testada em Node, por rever no browser |
+| `fase-3-hibrida/` | AES-GCM para a mensagem, RSA para a chave AES | escrita com Claude, testada em Node, por rever no browser |
+| `fase-4-pgp/` | OpenPGP.js 6.3.2 local, equivalências com `gpg` e `openssl` | escrita com Claude, interoperabilidade testada com o `gpg`, por rever no browser |
+| `fase-5-o-que-corre-mal/` | ECB, IV repetido, password fraca, RSA pequeno | escrita com Claude, testada em Node, por rever no browser |
 
 ## Como correr localmente
 
@@ -39,7 +39,7 @@ Depois abre `http://localhost:8000`.
 
 O ponto de partida foi o livro **Técnicas para Hackers: Soluções para Segurança**, de Wilson Oliveira (Centro Atlântico), requisitado na biblioteca. Li o capítulo de criptografia e escrevi um resumo meu.
 
-Usei IA (Claude) para rever o resumo, encontrar erros, propor a estrutura do projeto, escrever a fase 1 como ponto de partida e redigir a documentação de cada fase. As fases seguintes são escritas por mim, e a documentação é feita a partir do meu código e das minhas notas e revista por mim antes de cada commit. O README de cada fase diz quem escreveu o quê. Algumas partes do livro estão desatualizadas (DES e 3DES, por exemplo), por isso o repositório indica sempre o que se usa hoje.
+Usei IA (Claude) para rever o resumo, encontrar erros, propor a estrutura do projeto, escrever a fase 1 como ponto de partida e redigir a documentação de cada fase. As fases 2 a 5 foram também escritas com Claude, a meu pedido, em vez de por mim como estava planeado: o código, o guia de cada página e os READMEs. Foram testadas por script em Node e, na fase 4, contra o `gpg` real, mas não foram abertas num browser durante a escrita, e as secções "o que aprendi / o que errei" ficaram em branco para eu preencher. O README de cada fase diz quem escreveu o quê. Algumas partes do livro estão desatualizadas (DES e 3DES, por exemplo), por isso o repositório indica sempre o que se usa hoje.
 
 ## Erros que corrigi do meu próprio resumo
 
