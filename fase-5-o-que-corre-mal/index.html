@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fase 5: o que corre mal | Criptografia na Prática</title>
+  <link rel="stylesheet" href="../assets/fase.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a href="../">← Índice</a>
+      <span class="pos">Fase 5 de 5</span>
+    </div>
+  </header>
+
+  <main class="fase">
+    <div class="cabecalho">
+      <h1><span>05</span> O que corre mal</h1>
+      <p>A criptografia bem escolhida falha quando é mal usada. Quatro erros clássicos, reproduzidos aqui com dados inventados por esta página, na tua máquina. Cada um acaba com a correção. Material educativo: nada aqui aponta a alvos reais.</p>
+    </div>
+
+    <div class="lab">
+      <section class="bloco">
+        <h2><b>1</b>ECB: o padrão que não desaparece</h2>
+        <div class="botoes"><button id="ecb-correr">Encriptar a imagem em ECB e em GCM</button></div>
+        <div class="par">
+          <figure><canvas id="img-orig" width="64" height="64" aria-label="Imagem original"></canvas><figcaption>original</figcaption></figure>
+          <figure><canvas id="img-ecb" width="64" height="64" aria-label="Imagem cifrada em ECB"></canvas><figcaption>AES-ECB</figcaption></figure>
+          <figure><canvas id="img-gcm" width="64" height="64" aria-label="Imagem cifrada em GCM"></canvas><figcaption>AES-GCM</figcaption></figure>
+        </div>
+        <pre id="res-ecb" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>2</b>IV repetido em GCM</h2>
+        <label for="iv-conhecida">Mensagem que o atacante conhece</label>
+        <input id="iv-conhecida" value="Transferir 500 euros para a conta 1234.">
+        <label for="iv-secreta">Mensagem secreta (o atacante não a vê)</label>
+        <input id="iv-secreta" value="A password do wifi e gato-azul-42">
+        <div class="botoes"><button id="iv-correr">Encriptar as duas com o mesmo IV e atacar</button></div>
+        <pre id="res-iv" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>3</b>Password fraca</h2>
+        <label for="pw-alvo">Password do ficheiro (o atacante não a conhece)</label>
+        <input id="pw-alvo" value="sol2024" autocomplete="off" spellcheck="false">
+        <label for="iter">Iterações de PBKDF2</label>
+        <select id="iter">
+          <option value="1">1</option>
+          <option value="1000" selected>1 000</option>
+          <option value="600000">600 000 (valor da fase 1)</option>
+        </select>
+        <label for="lista">Lista de passwords a tentar (uma por linha, criada por mim)</label>
+        <textarea id="lista" rows="5" spellcheck="false"></textarea>
+        <div class="botoes"><button id="pw-correr">Atacar</button></div>
+        <pre id="res-pw" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>4</b>Chave RSA pequena</h2>
+        <label for="rsa-bits">Tamanho do módulo</label>
+        <select id="rsa-bits">
+          <option value="64" selected>64 bits</option>
+          <option value="80">80 bits (cerca de 2 s)</option>
+        </select>
+        <label for="rsa-msg">Mensagem curta</label>
+        <input id="rsa-msg" value="segredo">
+        <div class="botoes"><button id="rsa-correr">Gerar chave, encriptar e factorizar</button></div>
+        <pre id="res-rsa" class="res" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <aside class="guia" aria-label="Passo a passo">
+      <h2 class="titulo-guia">Passo a passo</h2>
+      <ol class="passos">
+
+        <li class="passo" data-passo="ecb">
+          <h3>Modo ECB: encripta uma imagem</h3>
+          <div class="corpo">
+            <p>A página desenha uma imagem de 64×64 pixels com três formas e encripta os bytes dos pixels de duas maneiras, com a mesma chave AES-256. No <strong>ECB</strong> cada bloco de 16 bytes é cifrado sozinho, por isso blocos iguais dão sempre cifrados iguais. No <strong>GCM</strong> cada bloco depende do contador e do IV, e o resultado parece ruído.</p>
+            <dl class="valores">
+              <dt>Blocos</dt><dd data-live="ecb-blocos">(carrega no botão)</dd>
+              <dt>Distintos no original</dt><dd data-live="ecb-d-claro">(carrega no botão)</dd>
+              <dt>Distintos depois de ECB</dt><dd data-live="ecb-d-ecb">(carrega no botão)</dd>
+              <dt>Distintos depois de GCM</dt><dd data-live="ecb-d-gcm">(carrega no botão)</dd>
+            </dl>
+            <p>O ECB não esconde as formas. Vê-se o contorno do que foi cifrado, apesar de nenhum byte ser legível. A criptografia não falhou: o AES continua inquebrado. Falhou o modo.</p>
+            <p class="por-dentro"><span class="etq">Por dentro</span>A Web Crypto nem oferece ECB, precisamente por ser perigoso. A página simula-o cifrando bloco a bloco com AES-CBC e IV zero, que no primeiro bloco é um AES puro. No terminal, <code>openssl enc -aes-128-ecb</code> faz o mesmo (ver <code>terminal/</code>).</p>
+            <p class="por-dentro"><span class="etq">Como se evita</span>Usa sempre um modo autenticado com IV único: AES-GCM ou ChaCha20-Poly1305. Nunca ECB.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="iv">
+          <h3>IV repetido: recupera uma mensagem sem a chave</h3>
+          <div class="corpo">
+            <p>O GCM funciona como uma cifra de fluxo: gera uma sequência de bytes a partir da chave e do IV (o <em>keystream</em>) e faz XOR com o texto. Se dois textos usam a mesma chave <strong>e o mesmo IV</strong>, o keystream é o mesmo, e ao fazer XOR dos dois cifrados o keystream desaparece:</p>
+            <pre class="codigo">c1 = p1 XOR K
+c2 = p2 XOR K
+c1 XOR c2 = p1 XOR p2          // K cancelou
+p2 = c1 XOR c2 XOR p1          // se conheces p1</pre>
+            <dl class="valores">
+              <dt>c1 XOR c2 (hex)</dt><dd data-live="iv-xorc">(carrega no botão)</dd>
+              <dt>p1 XOR p2 (hex)</dt><dd data-live="iv-xorp">(carrega no botão)</dd>
+              <dt>Resultado</dt><dd data-live="iv-igual">(carrega no botão)</dd>
+            </dl>
+            <p>O atacante não usa a chave em momento nenhum. Recupera tantos bytes da mensagem secreta quantos tiver a mensagem que já conhece. Mesmo sem conhecer nenhuma, p1 XOR p2 revela muito sobre ambas, e texto em português tem muita estrutura.</p>
+            <p class="por-dentro"><span class="etq">Pior ainda</span>Em GCM, repetir o IV também compromete a autenticação: com dois pares de mensagem e etiqueta com o mesmo IV, um atacante pode, em teoria, recuperar a chave de autenticação e forjar mensagens. Este é o resultado conhecido do NIST SP 800-38D (secção sobre unicidade do IV). Aqui só mostramos a perda de confidencialidade.</p>
+            <p class="por-dentro"><span class="etq">Como se evita</span>IV novo e aleatório de 12 bytes em cada encriptação (como a fase 1), ou um contador que nunca se repete. Se encriptares um número enorme de mensagens com a mesma chave, o IV aleatório de 96 bits acaba por colidir: roda a chave antes disso.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="pw">
+          <h3>Password fraca: adivinha-se</h3>
+          <div class="corpo">
+            <p>A fase 1 deriva a chave AES da password. O AES-256 é inquebrável, mas a chave é tão forte quanto a password. A página encripta algo com a password <code>sol2024</code> e depois tenta, uma a uma, as passwords de uma lista curta que escrevi. Cada tentativa deriva a chave e tenta decifrar: se a etiqueta GCM bater certo, acertou.</p>
+            <p>Experimenta com 1, 1 000 e 600 000 iterações e compara a velocidade:</p>
+            <dl class="valores">
+              <dt>Iterações</dt><dd data-live="pw-iter">(carrega em Atacar)</dd>
+              <dt>Tentativas</dt><dd data-live="pw-tent">(carrega em Atacar)</dd>
+              <dt>Tempo</dt><dd data-live="pw-seg">(carrega em Atacar)</dd>
+              <dt>Velocidade</dt><dd data-live="pw-taxa">(carrega em Atacar)</dd>
+              <dt>Tempo estimado para 1 milhão de passwords</dt><dd data-live="pw-milhao">(carrega em Atacar)</dd>
+            </dl>
+            <p>As iterações do PBKDF2 não tornam uma password fraca forte. Só multiplicam o custo de cada tentativa. Uma lista real tem milhões de entradas, e quem ataca usa GPUs ou várias máquinas em paralelo, portanto os números desta página são um mínimo de referência, não uma previsão.</p>
+            <p class="por-dentro"><span class="etq">Como se evita</span>Passwords longas e aleatórias (várias palavras ao acaso, ou de um gestor de passwords), e um número de iterações alto (a OWASP recomenda 600 000 para PBKDF2-HMAC-SHA256, confirma no cheat sheet atual). Para guardar passwords de utilizadores, melhor ainda é o Argon2id.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="rsa">
+          <h3>RSA pequeno: factoriza-se o módulo</h3>
+          <div class="corpo">
+            <p>Uma chave pública RSA é um número <code>n</code> (o módulo) e um expoente <code>e</code>. O módulo é o produto de dois primos secretos <code>p × q</code>. A segurança do RSA assenta em factorizar <code>n</code> ser impraticável. Com um módulo pequeno não é: a página gera uma chave de 64 ou 80 bits, encripta uma mensagem, e depois, usando só <code>n</code> e <code>e</code>, factoriza <code>n</code>, calcula a privada <code>d</code> e decifra.</p>
+            <dl class="valores">
+              <dt>Módulo público n</dt><dd data-live="rsa-n">(carrega no botão)</dd>
+              <dt>Cifrado c</dt><dd data-live="rsa-c">(carrega no botão)</dd>
+              <dt>Fatores encontrados</dt><dd data-live="rsa-fatores">(carrega no botão)</dd>
+              <dt>Tempo a factorizar</dt><dd data-live="rsa-tempo">(carrega no botão)</dd>
+              <dt>Privada d reconstruída</dt><dd data-live="rsa-d">(carrega no botão)</dd>
+            </dl>
+            <p>Compara 64 e 80 bits: o tempo sobe muito mais depressa do que o tamanho. O algoritmo usado (Pollard rho) precisa de cerca de 2<sup>n/4</sup> passos para um módulo de n bits, e o tempo varia de chave para chave porque os primos são aleatórios; nas minhas corridas, 80 bits demorou dezenas de vezes mais do que 64. Um módulo de 3072 bits está muito, muito para lá do que isto consegue. Mesmo os melhores algoritmos conhecidos (crivo geral do corpo de números) não chegam lá: o NIST estima cerca de 128 bits de segurança para RSA-3072.</p>
+            <p class="por-dentro"><span class="etq">Atenção</span>Isto é RSA "de manual", sem padding, só para a demonstração. O RSA a sério usa OAEP (fase 2). Os 64 e 80 bits aqui são brinquedos; hoje o mínimo aceitável é 2048 bits, e 3072 é a recomendação para uso a longo prazo.</p>
+            <p class="por-dentro"><span class="etq">Como se evita</span>RSA de pelo menos 2048 bits (melhor 3072) ou curvas elípticas (P-256, Curve25519). Gera as chaves com uma biblioteca, nunca à mão.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="conclusao">
+          <h3>O que aprendeste</h3>
+          <div class="corpo">
+            <ol class="sub">
+              <li>Um algoritmo forte não salva um modo errado (ECB).</li>
+              <li>Os parâmetros que "são só números" (IV) são requisitos de segurança.</li>
+              <li>A chave derivada de uma password nunca é mais forte do que a password.</li>
+              <li>Tamanhos de chave têm um mínimo, e abaixo dele a conta é feita em milissegundos.</li>
+            </ol>
+            <p>Todos estes erros são evitáveis com bibliotecas bem escolhidas e as configurações por defeito. Quando não as usas, és tu a escolher o modo, o IV, o tamanho e o padding, e é aí que as coisas correm mal.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h2 class="titulo-guia" style="margin-top:2.2rem">Em resumo</h2>
+      <p>ECB mostra padrões, IV repetido deixa recuperar texto sem chave, passwords fracas adivinham-se e módulos RSA pequenos factorizam-se. Em todos os casos a matemática do AES e do RSA continua certa; o que falhou foi o uso.</p>
+
+      <nav class="rodape-fase" aria-label="Navegação entre fases">
+        <a href="../fase-4-pgp/">← Fase 4, PGP</a>
+        <a href="../">Voltar ao índice →</a>
+      </nav>
+    </aside>
+  </main>
+
+  <script src="../assets/fase.js"></script>
+  <script src="../assets/util.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

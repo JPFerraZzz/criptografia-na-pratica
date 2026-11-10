@@ -1,6 +1,6 @@
 # Passo a passo das fases
 
-Método de trabalho: escrevo e corro o código de cada fase (da 2 em diante, ver a fase 1 abaixo). Depois junto o código, o output e o que observei, e a documentação da fase é redigida a partir disso. Reviso tudo antes do commit.
+Método planeado: escrevo e corro o código de cada fase (da 2 em diante, ver a fase 1 abaixo). Na prática, as fases 2 a 5 foram escritas com o Claude a meu pedido; os passos abaixo descrevem o que cada uma implementa e servem para as reler, correr e reescrever a gosto. Depois junto o código, o output e o que observei, e a documentação da fase é redigida a partir disso. Reviso tudo antes do commit.
 
 Regra para cada fase: se não consigo explicar uma linha do código, ainda não está pronta.
 
@@ -143,5 +143,5 @@ Fontes: NIST SP 800-38D (secção sobre unicidade do IV), OWASP, NIST SP 800-57.
 - [ ] Afirmações técnicas conferidas nas fontes
 - [ ] Secção "o que aprendi / o que errei" preenchida
 - [ ] Estado atualizado na tabela do README principal
-- [ ] Fase ativada no menu da `index.html` da raiz (hoje todas dizem "em breve", fase 1 incluída)
+- [x] Fase ativada no menu da `index.html` da raiz (as cinco já estão ligadas)
 - [ ] Commit com mensagem clara

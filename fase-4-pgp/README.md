@@ -1,38 +1,60 @@
 # Fase 4: PGP a sério
 
-Objetivo: ver como uma implementação real do que fizeste à mão na fase 3 se compara, e usar as ferramentas de linha de comandos que vais encontrar em Linux.
+Vê como uma implementação real do que fizeste à mão na fase 3 se compara, e como se faz o mesmo no terminal.
 
-## O que construir
+## O que faz
 
-1. Uma página com a biblioteca OpenPGP.js (servida localmente, não por CDN, para o repositório funcionar offline) que gera chaves, encripta, decripta, assina e verifica.
-2. Um ficheiro `equivalencias.md` com os mesmos passos feitos no terminal e na página.
+Uma página com a OpenPGP.js **6.3.2**, em `vendor/` (servida localmente, sem CDN, funciona offline; licença LGPL em `vendor/LICENSE`) que:
 
-## Comandos a documentar e testar
+1. Gera chaves (EdDSA + ECDH sobre Curve25519, sem passphrase, por simplicidade).
+2. Encripta (e opcionalmente assina) e decripta, e mostra os pacotes OpenPGP da mensagem.
+3. Altera 1 carácter e mostra que a decriptação falha.
+4. Assina em modo "cleartext", verifica, e mostra a falha quando se altera o texto.
 
-GnuPG:
-
-```
-gpg --full-generate-key
-gpg --armor --export <id> > publica.asc
-gpg --encrypt --armor --recipient <id> mensagem.txt
-gpg --decrypt mensagem.txt.asc
-gpg --sign --armor mensagem.txt
-gpg --verify mensagem.txt.asc
-```
-
-OpenSSL, para a parte manual das fases 2 e 3 (confirmar as opções na versão instalada antes de publicar):
+## Como correr
 
 ```
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out privada.pem
-openssl pkey -in privada.pem -pubout -out publica.pem
+python3 -m http.server 8000
 ```
 
-## Comparar com a fase 3
+Abre `http://localhost:8000/fase-4-pgp/`.
 
-- O que o formato OpenPGP guarda além do que o teu pacote guarda (algoritmos usados, identificadores de chave, carimbo de data, compressão).
-- Como o OpenPGP encadeia chave de sessão, chave pública e assinatura (RFC 9580).
-- Teia de confiança versus autoridades certificadoras.
+## Terminal
 
-## Estado
+[`equivalencias.md`](equivalencias.md): os comandos `gpg` e `openssl` correspondentes, corridos de verdade (GnuPG 2.4.4, OpenSSL 3.0.13), com a saída observada de `--list-packets`.
 
-Por fazer.
+## Comparação com a fase 3
+
+| Fase 3 | OpenPGP |
+|---|---|
+| `chaveCifrada` | pacote PKESK (leva também o ID da chave destinatária) |
+| `iv` + `cifrado` | pacote SEIPD (dados cifrados com integridade) |
+| `versao`, `nome`, `tipo` | pacote de dados literais (formato, nome, data) |
+| nada | compressão, assinatura, carimbo de data, preferências de algoritmos |
+| confiar na chave colada | teia de confiança (PGP) ou autoridades certificadoras (X.509) |
+
+## Descoberta importante: compatibilidade
+
+A OpenPGP.js 6 gera por defeito, com `type: "curve25519"`, chaves no formato novo da RFC 9580. Testei com o GnuPG 2.4.4 e **não consegue usá-las** ("Algoritmo de chave pública inválido"). A página usa `type: "ecc", curve: "curve25519Legacy"`, e essas funcionam nos dois sentidos com o `gpg`. Versões mais recentes do GnuPG podem aceitar o formato novo.
+
+Outras notas: o `gpg` 2.4 cifra os dados com AEAD (OCB), a página com SEIPD/MDC. Ambos autenticam.
+
+## Quem escreveu o quê
+
+Código, guia e `equivalencias.md` escritos pelo Claude a pedido. A lógica foi testada em Node contra a OpenPGP.js e contra o `gpg` real (interoperabilidade nos dois sentidos). **Não foi aberta num browser.** A API da OpenPGP.js muda entre versões: segue a documentação da 6.x.
+
+## Atualizar a biblioteca
+
+```
+npm pack openpgp@<versão>   # e copiar dist/openpgp.min.js e LICENSE para vendor/
+```
+
+Depois repete os testes de interoperabilidade com o `gpg`.
+
+## O que aprendi / o que errei
+
+(Para preencher por ti.)
+
+## Fontes
+
+Documentação da OpenPGP.js, RFC 4880 e RFC 9580, manual do GnuPG.

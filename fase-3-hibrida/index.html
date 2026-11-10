@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fase 3: criptografia híbrida | Criptografia na Prática</title>
+  <link rel="stylesheet" href="../assets/fase.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a href="../">← Índice</a>
+      <span class="pos">Fase 3 de 5</span>
+    </div>
+  </header>
+
+  <main class="fase">
+    <div class="cabecalho">
+      <h1><span>03</span> Criptografia híbrida</h1>
+      <p>O AES é rápido mas exige partilhar uma chave. O RSA resolve a partilha mas só aguenta mensagens minúsculas. Juntando os dois: AES para a mensagem, RSA só para a chave AES. É assim que o PGP funciona. Material educativo: não uses isto para proteger dados reais.</p>
+    </div>
+
+    <div class="lab">
+      <section class="bloco">
+        <h2><b>A</b>Destinatário: chaves</h2>
+        <div class="botoes"><button id="gerar">Gerar o meu par RSA-3072</button></div>
+        <pre id="res-chaves" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>B</b>Remetente: encriptar</h2>
+        <label for="pub">Chave pública do destinatário (PEM). Gerada ao lado, ou cola outra</label>
+        <textarea id="pub" rows="5" spellcheck="false" placeholder="-----BEGIN PUBLIC KEY-----"></textarea>
+        <label for="texto">Texto</label>
+        <textarea id="texto" rows="3">Mensagem de qualquer tamanho.</textarea>
+        <label for="ficheiro">…ou um ficheiro (se escolheres um, é este que é encriptado)</label>
+        <input id="ficheiro" type="file">
+        <div class="botoes">
+          <button id="encriptar">Encriptar</button>
+          <button id="um-mb" class="secundario">Encriptar 1 MB aleatório</button>
+        </div>
+        <pre id="res-enc" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>C</b>Pacote (JSON, base64)</h2>
+        <textarea id="pacote" rows="8" spellcheck="false" aria-label="Pacote híbrido"></textarea>
+      </section>
+
+      <section class="bloco">
+        <h2><b>D</b>Destinatário: decriptar</h2>
+        <div class="botoes">
+          <button id="decriptar">Decriptar com a privada</button>
+          <button id="adulterar" class="secundario">Alterar 1 bit do cifrado</button>
+        </div>
+        <pre id="res-dec" class="res" aria-live="polite"></pre>
+        <p><a id="descarregar" hidden>Descarregar o resultado</a></p>
+      </section>
+    </div>
+
+    <aside class="guia" aria-label="Passo a passo">
+      <h2 class="titulo-guia">Passo a passo</h2>
+      <ol class="passos">
+
+        <li class="passo" data-passo="chaves">
+          <h3>O destinatário gera o par de chaves</h3>
+          <div class="corpo">
+            <p>Quem vai <em>receber</em> gera o par RSA e entrega a chave pública a quem lhe quiser escrever. Aqui fazes os dois papéis na mesma página: a privada fica guardada neste separador e não se exporta.</p>
+            <p>Se recarregares a página, o par perde-se, e com ele a capacidade de decriptar o que cifraste antes.</p>
+            <dl class="valores"><dt>Impressão digital da chave pública (SHA-256, primeiros 16 bytes)</dt><dd data-live="impressao">(gera ou cola uma chave)</dd></dl>
+            <p class="por-dentro"><span class="etq">Para que serve</span>A impressão digital é um resumo curto da chave pública. Duas pessoas podem compará-la por telefone para confirmar que têm a mesma chave. Ver o último passo, sobre PKI.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="encriptar">
+          <h3>O remetente encripta</h3>
+          <div class="corpo">
+            <p>Escolhe um texto ou ficheiro e carrega em <em>Encriptar</em>. Passa-se isto:</p>
+            <ol class="sub" type="a">
+              <li>Nasce uma chave AES-256 nova, usada só uma vez.</li>
+              <li>O AES-GCM cifra a mensagem inteira com ela (rápido, qualquer tamanho), com um IV novo.</li>
+              <li>O RSA-OAEP cifra só a chave AES (32 bytes, cabe de sobra nos 318 do limite) com a pública do destinatário.</li>
+              <li>Tudo vai para um pacote.</li>
+            </ol>
+            <pre class="codigo">const aes = await crypto.subtle.generateKey(
+  { name: "AES-GCM", length: 256 }, true, ["encrypt"]);
+const cifrado = await crypto.subtle.encrypt(
+  { name: "AES-GCM", iv }, aes, mensagem);
+const chaveCifrada = await crypto.subtle.encrypt(
+  { name: "RSA-OAEP" }, chavePublica,
+  await crypto.subtle.exportKey("raw", aes));</pre>
+            <p class="por-dentro"><span class="etq">Porque é descartável</span>Como cada mensagem tem a sua chave AES, quem obtiver uma chave só lê essa mensagem. Se a mesma chave AES servisse para tudo, uma fuga abria tudo.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="pacote">
+          <h3>Lê o pacote</h3>
+          <div class="corpo">
+            <p>O pacote é um JSON com os campos em base64. É o que se envia ao destinatário, por qualquer canal, mesmo inseguro. Tamanhos desta encriptação:</p>
+            <dl class="valores">
+              <dt>Mensagem original</dt><dd data-live="t-claro">(encripta primeiro)</dd>
+              <dt>Chave AES</dt><dd data-live="t-aes">(encripta primeiro)</dd>
+              <dt>Chave AES cifrada (RSA)</dt><dd data-live="t-chave">(encripta primeiro)</dd>
+              <dt>IV</dt><dd data-live="t-iv">(encripta primeiro)</dd>
+              <dt>Mensagem cifrada (AES-GCM)</dt><dd data-live="t-cifrado">(encripta primeiro)</dd>
+            </dl>
+            <p>Formato:</p>
+            <pre class="codigo">{ "versao":      "hibrido-v1",
+  "nome":        "nome do ficheiro",
+  "tipo":        "tipo MIME",
+  "chaveCifrada":"base64, 384 bytes",
+  "iv":          "base64, 12 bytes",
+  "cifrado":     "base64, tamanho + 16" }</pre>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="um-mb">
+          <h3>Encripta 1 MB</h3>
+          <div class="corpo">
+            <p>Carrega em <em>Encriptar 1 MB aleatório</em>. Na fase 2, o RSA falhava aos 319 bytes. Aqui passa 1 MB sem problema, e o tempo é uma fração de segundo, porque o RSA só cifra 32 bytes. O pacote cresce pouco além do tamanho da mensagem: 384 + 12 + 16 bytes fixos, mais o base64 (que acrescenta um terço).</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="decriptar">
+          <h3>O destinatário decripta</h3>
+          <div class="corpo">
+            <p>A privada abre a chave AES; a chave AES abre a mensagem. Se for ficheiro, aparece um link para o descarregar.</p>
+            <pre class="codigo">const aesRaw = await crypto.subtle.decrypt(
+  { name: "RSA-OAEP" }, privada, chaveCifrada);
+const aes = await crypto.subtle.importKey(
+  "raw", aesRaw, "AES-GCM", false, ["decrypt"]);
+const claro = await crypto.subtle.decrypt(
+  { name: "AES-GCM", iv }, aes, cifrado);</pre>
+            <p class="por-dentro"><span class="etq">Experimenta</span>Gera outro par (o botão da secção A) e tenta decriptar o pacote antigo. Falha: o pacote foi feito para a chave pública anterior.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="adulterar">
+          <h3>Altera 1 bit</h3>
+          <div class="corpo">
+            <p>O GCM da fase 1 continua a proteger a mensagem: alterado 1 bit do cifrado, a decriptação falha. O pacote híbrido herda a autenticação do AES-GCM, mas <strong>não</strong> diz quem o enviou (isso exige assinatura, fase 4).</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="limites">
+          <h3>O que o híbrido não resolve</h3>
+          <div class="corpo">
+            <p>Se alguém te enviar uma chave pública a dizer que é do teu banco, como sabes que é? Nada neste pacote o garante. Encriptar para a chave errada é encriptar para o atacante. Resolver isto é a tarefa da <strong>PKI</strong>: certificados X.509 assinados por autoridades certificadoras, com revogação por CRL ou OCSP (ver <a href="../docs/correcoes-ao-resumo.md">correções ao resumo</a>, ponto 5). O PGP usa outro modelo, a teia de confiança (fase 4).</p>
+            <p>O TLS (HTTPS) segue a mesma ideia, mas a chave de sessão é acordada por ECDHE em vez de enviada cifrada, o que dá <em>forward secrecy</em>: roubar a privada mais tarde não abre conversas antigas. Aqui isso não acontece: quem guardar o pacote e depois roubar a privada, lê a mensagem.</p>
+            <ol class="sub">
+              <li>Gera um segundo par, copia a pública e encripta para ela. Consegues decriptar?</li>
+              <li>Compara as impressões digitais das duas chaves.</li>
+            </ol>
+          </div>
+        </li>
+      </ol>
+
+      <h2 class="titulo-guia" style="margin-top:2.2rem">Em resumo</h2>
+      <p>Híbrido: chave AES descartável para a mensagem, chave pública RSA para a chave AES, pacote com as duas coisas. É rápido, funciona para qualquer tamanho e não exige segredo prévio. Falta ainda saber se a chave pública é de quem diz.</p>
+
+      <nav class="rodape-fase" aria-label="Navegação entre fases">
+        <a href="../fase-2-assimetrica/">← Fase 2, assimétrica</a>
+        <a href="../fase-4-pgp/">Fase 4, PGP →</a>
+      </nav>
+    </aside>
+  </main>
+
+  <script src="../assets/fase.js"></script>
+  <script src="../assets/util.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

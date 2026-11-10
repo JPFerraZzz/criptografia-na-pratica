@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fase 4: PGP a sério | Criptografia na Prática</title>
+  <link rel="stylesheet" href="../assets/fase.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a href="../">← Índice</a>
+      <span class="pos">Fase 4 de 5</span>
+    </div>
+  </header>
+
+  <main class="fase">
+    <div class="cabecalho">
+      <h1><span>04</span> PGP a sério</h1>
+      <p>O que fizeste à mão na fase 3, feito por uma biblioteca madura (OpenPGP.js 6.3.2, servida desta pasta, sem CDN). Gera chaves, encripta, decripta, assina e verifica, e vê os pacotes por dentro. Material educativo: para dados reais usa o GnuPG ou o age.</p>
+    </div>
+
+    <div class="lab">
+      <section class="bloco">
+        <h2><b>A</b>Chaves</h2>
+        <label for="nome">Nome</label>
+        <input id="nome" value="Teste" autocomplete="off">
+        <label for="email">Email</label>
+        <input id="email" value="teste@example.com" autocomplete="off">
+        <div class="botoes"><button id="gerar">Gerar chaves (Curve25519)</button></div>
+        <label for="pub">Chave pública (armored)</label>
+        <textarea id="pub" rows="5" readonly spellcheck="false"></textarea>
+        <label for="priv">Chave privada (armored). Só existe aqui, nunca a partilhes</label>
+        <textarea id="priv" rows="4" readonly spellcheck="false"></textarea>
+        <pre id="res-chaves" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>B</b>Encriptar e decriptar</h2>
+        <label for="texto">Texto</label>
+        <textarea id="texto" rows="3">Olá, PGP</textarea>
+        <label><input id="assinar-ao-encriptar" type="checkbox" style="width:auto"> assinar também (com a minha privada)</label>
+        <div class="botoes">
+          <button id="encriptar">Encriptar</button>
+          <button id="decriptar">Decriptar</button>
+          <button id="adulterar" class="secundario">Alterar 1 carácter</button>
+        </div>
+        <label for="cifrado">Mensagem (armored)</label>
+        <textarea id="cifrado" rows="7" spellcheck="false"></textarea>
+        <pre id="res-enc" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>C</b>Assinar e verificar</h2>
+        <label for="texto-ass">Texto a assinar</label>
+        <textarea id="texto-ass" rows="2">Pago 50 euros ao João.</textarea>
+        <div class="botoes">
+          <button id="assinar">Assinar</button>
+          <button id="verificar">Verificar</button>
+          <button id="alterar-ass" class="secundario">Alterar 1 letra</button>
+        </div>
+        <label for="assinado">Texto assinado</label>
+        <textarea id="assinado" rows="7" spellcheck="false"></textarea>
+        <pre id="res-ass" class="res" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <aside class="guia" aria-label="Passo a passo">
+      <h2 class="titulo-guia">Passo a passo</h2>
+      <ol class="passos">
+
+        <li class="passo" data-passo="gerar">
+          <h3>Gera as chaves</h3>
+          <div class="corpo">
+            <p>Uma chave OpenPGP não é só um número: é um conjunto de pacotes. Há uma <strong>chave principal</strong> (EdDSA sobre Ed25519), que assina e identifica, e uma <strong>subchave</strong> (ECDH sobre Curve25519), que encripta. Duas chaves para dois usos, como na fase 2. A principal certifica a subchave e o nome/email (o <em>user ID</em>).</p>
+            <dl class="valores">
+              <dt>Impressão digital</dt><dd data-live="pgp-id">(gera as chaves)</dd>
+              <dt>Algoritmos</dt><dd data-live="pgp-alg">(gera as chaves)</dd>
+              <dt>Data de criação (vai dentro da chave)</dt><dd data-live="pgp-criada">(gera as chaves)</dd>
+            </dl>
+            <pre class="codigo">const r = await openpgp.generateKey({
+  type: "ecc", curve: "curve25519Legacy",
+  userIDs: [{ name, email }],
+  format: "object" });</pre>
+            <p class="por-dentro"><span class="etq">Compatibilidade</span>A OpenPGP.js 6 também sabe gerar chaves no formato novo da RFC 9580 (Ed25519/X25519 puros). Testei: o GnuPG 2.4.4 não as consegue usar. Por isso a página usa a variante "legacy", e as suas chaves e mensagens funcionam nos dois sentidos com o GnuPG.</p>
+            <p class="por-dentro"><span class="etq">Por dentro</span>Esta página não pede passphrase, por simplicidade. Uma chave privada a sério deve ser protegida por uma passphrase. A impressão digital é a identidade da chave: compara-a por outro canal antes de confiares numa chave de outra pessoa.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="encriptar">
+          <h3>Encripta</h3>
+          <div class="corpo">
+            <p>O mesmo procedimento híbrido da fase 3: chave de sessão aleatória, mensagem cifrada com ela, chave de sessão cifrada com a pública. A diferença é que está tudo normalizado no formato OpenPGP e que a chave de sessão é protegida com ECDH sobre Curve25519 em vez de RSA.</p>
+            <pre class="codigo">const armored = await openpgp.encrypt({
+  message: await openpgp.createMessage({ text }),
+  encryptionKeys: publica,
+  signingKeys: privada });  // opcional</pre>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="pacotes">
+          <h3>Olha para os pacotes</h3>
+          <div class="corpo">
+            <p>A página lê a mensagem que acabou de criar e lista os pacotes. É a tua fase 3 vista por dentro:</p>
+            <dl class="valores">
+              <dt>Pacotes da mensagem</dt><dd data-live="pgp-pacotes" style="white-space:pre-wrap">(encripta primeiro)</dd>
+              <dt>Tamanho</dt><dd data-live="pgp-tam">(encripta primeiro)</dd>
+            </dl>
+            <table class="tab">
+              <tr><th>Fase 3 (à mão)</th><th>OpenPGP</th></tr>
+              <tr><td><code>chaveCifrada</code></td><td>pacote PKESK: chave de sessão cifrada + ID da chave destinatária + algoritmo</td></tr>
+              <tr><td><code>iv</code> + <code>cifrado</code> (AES-GCM)</td><td>pacote SEIPD: dados cifrados com integridade (AES e MDC/AEAD, conforme a versão)</td></tr>
+              <tr><td><code>versao</code>, <code>nome</code>, <code>tipo</code></td><td>pacote de dados literais (formato, nome, data) dentro do SEIPD</td></tr>
+              <tr><td>(nada)</td><td>compressão opcional, assinatura opcional, carimbo de data</td></tr>
+            </table>
+            <p>Repara que o PKESK leva o ID da chave destinatária: o recipiente sabe qual das suas chaves usar. No teu pacote da fase 3 havia só uma chave.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="decriptar">
+          <h3>Decripta</h3>
+          <div class="corpo">
+            <p>Carrega em <em>Decriptar</em>. Se marcaste "assinar também", a assinatura é verificada ao mesmo tempo. Só encriptar não diz quem escreveu a mensagem: qualquer pessoa pode encriptar para ti com a tua pública. A assinatura é que prova a autoria.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="adulterar">
+          <h3>Altera um carácter</h3>
+          <div class="corpo">
+            <p>O botão muda 1 carácter a meio da mensagem armored. Ao decriptar, a biblioteca recusa (normalmente "Modification detected" ou erro de leitura). Os dados cifrados vêm sempre com proteção de integridade, e essa proteção é obrigatória, não opcional.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="assinar">
+          <h3>Assina um texto</h3>
+          <div class="corpo">
+            <p>Assinatura "cleartext": o texto continua legível e a assinatura vem anexa em base64. Foi com a tua chave privada de assinatura (EdDSA). Quem tiver a pública verifica.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="verificar">
+          <h3>Verifica</h3>
+          <div class="corpo"><p>Com a pública e o texto assinado, dá válida.</p></div>
+        </li>
+
+        <li class="passo" data-passo="alterar-ass">
+          <h3>Altera 1 letra e verifica</h3>
+          <div class="corpo">
+            <p>Dá inválida ("Signed digest did not match"): o resumo do texto já não bate com o que a assinatura cobre.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="confianca">
+          <h3>Confiança: teia versus autoridades</h3>
+          <div class="corpo">
+            <p>O PGP não tem autoridades certificadoras. Cada pessoa assina as chaves de outras que verificou pessoalmente (comparando a impressão digital), e vai confiando por transitividade: é a <strong>teia de confiança</strong>. Na PKI do HTTPS (X.509), as CAs são entidades centrais que assinam certificados e os navegadores já trazem a lista das que aceitam. A teia não depende de ninguém, mas dá trabalho e não escala; as CAs escalam, mas obrigam a confiar nelas. Nenhum dos dois é perfeito.</p>
+            <p>O formato definitivo está na RFC 9580 (que substitui a RFC 4880). O terminal faz o mesmo; os comandos estão em <a href="equivalencias.md"><code>equivalencias.md</code></a>.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h2 class="titulo-guia" style="margin-top:2.2rem">Em resumo</h2>
+      <p>OpenPGP é a criptografia híbrida da fase 3 mais assinaturas, identificadores de chave, compressão e um formato normalizado que interopera com o GnuPG. Podes encriptar sem assinar e assinar sem encriptar; para provar autoria e segredo ao mesmo tempo, fazes as duas.</p>
+
+      <nav class="rodape-fase" aria-label="Navegação entre fases">
+        <a href="../fase-3-hibrida/">← Fase 3, híbrida</a>
+        <a href="../fase-5-o-que-corre-mal/">Fase 5, o que corre mal →</a>
+      </nav>
+    </aside>
+  </main>
+
+  <script src="../assets/fase.js"></script>
+  <script src="../assets/util.js"></script>
+  <script src="vendor/openpgp.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

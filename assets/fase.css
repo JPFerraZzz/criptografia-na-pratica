@@ -104,6 +104,17 @@ pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.85
 #resultado { min-height: 3rem; }
 #resultado[data-estado="ok"] { color: var(--ok); }
 #resultado[data-estado="erro"] { color: var(--accent); }
+.res { min-height: 2.5rem; }
+.res[data-estado="ok"] { color: var(--ok); }
+.res[data-estado="erro"] { color: var(--accent); }
+select { width: 100%; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 2px; padding: 0.5rem; font: 0.88rem ui-monospace, Menlo, Consolas, monospace; }
+canvas { display: block; width: 100%; max-width: 14rem; image-rendering: pixelated; border: 1px solid var(--line); background: #fff; }
+.par { display: flex; gap: 1rem; flex-wrap: wrap; }
+.par figure { margin: 0; flex: 1 1 8rem; }
+.par figcaption { font: 0.75rem ui-monospace, Menlo, Consolas, monospace; color: var(--muted); margin-top: 0.3rem; }
+table.tab { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 0.8rem 0; }
+table.tab th, table.tab td { border: 1px solid var(--line); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+table.tab th { background: var(--panel); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; }
 
 /* Guia */
 .guia h2.titulo-guia {

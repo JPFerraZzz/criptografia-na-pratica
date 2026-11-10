@@ -8,3 +8,5 @@ node_modules/
 *.enc
 *.sig
 *.asc
+*.ppm
+__pycache__/

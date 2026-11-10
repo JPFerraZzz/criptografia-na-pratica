@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fase 2: criptografia assimétrica | Criptografia na Prática</title>
+  <link rel="stylesheet" href="../assets/fase.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a href="../">← Índice</a>
+      <span class="pos">Fase 2 de 5</span>
+    </div>
+  </header>
+
+  <main class="fase">
+    <div class="cabecalho">
+      <h1><span>02</span> Criptografia assimétrica</h1>
+      <p>Duas chaves ligadas: o que uma tranca, só a outra abre. Resolve o problema da fase 1: duas pessoas que nunca combinaram nada podem comunicar em privado. Material educativo: não uses isto para proteger dados reais.</p>
+    </div>
+
+    <div class="lab">
+      <section class="bloco">
+        <h2><b>A</b>RSA-OAEP: encriptar</h2>
+        <div class="botoes"><button id="gerar-rsa">Gerar par RSA-3072</button></div>
+        <label for="pub-rsa">Chave pública (PEM, podes partilhá-la)</label>
+        <textarea id="pub-rsa" rows="5" readonly spellcheck="false"></textarea>
+        <label for="txt-rsa">Texto curto</label>
+        <textarea id="txt-rsa" rows="2">Encontramo-nos às 18h.</textarea>
+        <div class="botoes">
+          <button id="enc-rsa">Encriptar com a pública</button>
+          <button id="dec-rsa">Decriptar com a privada</button>
+          <button id="grande-rsa" class="secundario">Tentar 400 bytes</button>
+        </div>
+        <label for="cif-rsa">Cifrado (base64)</label>
+        <textarea id="cif-rsa" rows="4" spellcheck="false"></textarea>
+        <pre id="res-rsa" class="res" aria-live="polite"></pre>
+      </section>
+
+      <section class="bloco">
+        <h2><b>B</b>ECDSA P-256: assinar</h2>
+        <div class="botoes"><button id="gerar-ec">Gerar par ECDSA</button></div>
+        <label for="pub-ec">Chave pública (PEM)</label>
+        <textarea id="pub-ec" rows="3" readonly spellcheck="false"></textarea>
+        <label for="txt-ec">Texto a assinar</label>
+        <textarea id="txt-ec" rows="2">Pago 50 euros ao João.</textarea>
+        <div class="botoes">
+          <button id="assinar">Assinar com a privada</button>
+          <button id="verificar">Verificar com a pública</button>
+          <button id="alterar" class="secundario">Alterar 1 letra e verificar</button>
+        </div>
+        <label for="sig">Assinatura (base64)</label>
+        <textarea id="sig" rows="2" spellcheck="false"></textarea>
+        <pre id="res-ec" class="res" aria-live="polite"></pre>
+      </section>
+    </div>
+
+    <aside class="guia" aria-label="Passo a passo">
+      <h2 class="titulo-guia">Passo a passo</h2>
+      <ol class="passos">
+
+        <li class="passo" data-passo="gerar-rsa">
+          <h3>Gera um par de chaves RSA</h3>
+          <div class="corpo">
+            <p>Carrega em <em>Gerar par RSA-3072</em>. O browser cria duas chaves matematicamente ligadas. A <strong>pública</strong> pode ser dada a toda a gente (está no campo acima). A <strong>privada</strong> fica só contigo.</p>
+            <p>Porquê 3072 bits? Segundo o NIST (SP 800-57), RSA-3072 dá cerca de 128 bits de segurança, o mesmo que AES-128. Uma chave RSA de 3072 bits protege tanto como uma AES de 128, não como uma de 3072. Para chegar ao nível do AES-256 o RSA precisaria de 15 360 bits.</p>
+            <pre class="codigo">const par = await crypto.subtle.generateKey(
+  { name: "RSA-OAEP", modulusLength: 3072,
+    publicExponent: new Uint8Array([1,0,1]), hash: "SHA-256" },
+  false, ["encrypt", "decrypt"]); // false: privada não extraível</pre>
+            <dl class="valores">
+              <dt>Tempo a gerar</dt><dd data-live="rsa-tempo">(carrega em Gerar)</dd>
+              <dt>Chave pública</dt><dd data-live="rsa-pub-bytes">(carrega em Gerar)</dd>
+              <dt>A privada é extraível?</dt><dd data-live="rsa-extraivel">(carrega em Gerar)</dd>
+            </dl>
+            <p class="por-dentro"><span class="etq">Por dentro</span>O browser guarda a privada internamente e o teu JavaScript não consegue ler os bytes dela, por isso não há botão para a mostrar. Se uma página tiver uma falha, quem a explorar não consegue copiar a chave (continua a poder pedir ao browser para a usar enquanto a página estiver aberta). Em geral, gera as privadas com <code>extractable: false</code> sempre que não precisares de as guardar.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="enc-rsa">
+          <h3>Encripta com a pública</h3>
+          <div class="corpo">
+            <p>Escreve um texto curto e carrega em <em>Encriptar com a pública</em>. Qualquer pessoa com a chave pública pode fazer isto. Só quem tem a privada consegue desfazer.</p>
+            <dl class="valores">
+              <dt>Texto claro</dt><dd data-live="rsa-claro-n">(carrega em Encriptar)</dd>
+              <dt>Cifrado</dt><dd data-live="rsa-cifrado-n">(carrega em Encriptar)</dd>
+              <dt>Início do cifrado (hex)</dt><dd data-live="rsa-cifrado">(carrega em Encriptar)</dd>
+            </dl>
+            <p class="por-dentro"><span class="etq">Por dentro</span>O RSA puro seria previsível (o mesmo texto daria sempre o mesmo cifrado). O OAEP acrescenta bytes aleatórios e uma máscara antes da conta RSA. Por isso encriptar duas vezes o mesmo texto dá cifrados diferentes. Experimenta.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="dec-rsa">
+          <h3>Decripta com a privada</h3>
+          <div class="corpo">
+            <p>O caminho inverso. Se mexeres numa letra do campo <em>Cifrado</em> e decriptares, falha: o OAEP deteta que o conteúdo não tem a estrutura certa.</p>
+            <pre class="codigo">const claro = await crypto.subtle.decrypt(
+  { name: "RSA-OAEP" }, par.privateKey, cifrado);</pre>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="grande-rsa">
+          <h3>Tenta encriptar 400 bytes</h3>
+          <div class="corpo">
+            <p>O RSA só encripta blocos pequenos. Com uma chave de 384 bytes (3072 bits), o OAEP usa 2 × 32 bytes do hash SHA-256 e mais 2 bytes de estrutura, sobrando 384 − 64 − 2 = <strong>318 bytes</strong>. Carrega em <em>Tentar 400 bytes</em> para ver o erro.</p>
+            <dl class="valores">
+              <dt>Limite</dt><dd data-live="rsa-limite">(carrega no botão)</dd>
+              <dt>Erro do browser</dt><dd data-live="rsa-erro">(carrega no botão)</dd>
+            </dl>
+            <p class="por-dentro"><span class="etq">Por dentro</span>E mesmo dentro do limite o RSA é lento (milhares de vezes mais que o AES). Esta limitação, mais a lentidão, é a razão da <strong>fase 3</strong>: usar o RSA para proteger uma pequena chave AES e o AES para a mensagem.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="gerar-ec">
+          <h3>Gera um par de chaves para assinar</h3>
+          <div class="corpo">
+            <p>Encriptar e assinar são coisas diferentes e usam-se pares de chaves diferentes (é boa prática, e a Web Crypto até a impõe: uma chave RSA-OAEP só pode encriptar, não assinar). Aqui usamos ECDSA na curva P-256, que dá cerca de 128 bits de segurança com chaves de 256 bits.</p>
+            <p>Numa assinatura o sentido inverte-se: <strong>assinas com a privada, qualquer pessoa verifica com a pública</strong>.</p>
+            <dl class="valores"><dt>Chave pública</dt><dd data-live="ec-pub-bytes">(carrega em Gerar par ECDSA)</dd></dl>
+            <p class="por-dentro"><span class="etq">Por dentro</span>A chave RSA ocupa 422 bytes na forma pública, a ECDSA cerca de 91. Para a mesma segurança as curvas elípticas são muito mais compactas. Com <code>extractable: false</code> a privada nunca sai do browser, mas a pública exporta-se sempre.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="assinar">
+          <h3>Assina um texto</h3>
+          <div class="corpo">
+            <p>A assinatura é calculada sobre um resumo (hash SHA-256) do texto, com a chave privada. Prova duas coisas: o texto não foi alterado e foi quem tem a privada que o assinou.</p>
+            <pre class="codigo">const sig = await crypto.subtle.sign(
+  { name: "ECDSA", hash: "SHA-256" }, privada, texto);</pre>
+            <dl class="valores"><dt>Tamanho da assinatura</dt><dd data-live="ec-sig-n">(carrega em Assinar)</dd></dl>
+            <p class="por-dentro"><span class="etq">Atenção</span>Assinar não esconde o texto. Qualquer pessoa o lê. Para o esconder, encripta-se (e normalmente faz-se as duas coisas).</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="verificar">
+          <h3>Verifica a assinatura</h3>
+          <div class="corpo">
+            <p>Com a chave pública e o mesmo texto, <code>verify</code> devolve <code>true</code>. Não revela nenhum segredo: é por isso que qualquer pessoa pode verificar.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="alterar">
+          <h3>Altera 1 letra e verifica outra vez</h3>
+          <div class="corpo">
+            <p>O botão muda a primeira letra do texto e verifica de novo com a assinatura antiga. Dá <strong>inválida</strong>: bastou 1 letra para o resumo mudar por completo. É assim que se sabe que um documento assinado foi adulterado.</p>
+            <p class="por-dentro"><span class="etq">Experimenta</span>Assina, apaga a assinatura e escreve outra qualquer em base64 do mesmo tamanho. Também falha. Sem a privada não há forma prática de fabricar uma assinatura válida.</p>
+          </div>
+        </li>
+
+        <li class="passo" data-passo="experiencias">
+          <h3>Experiências para fazer sozinho</h3>
+          <div class="corpo">
+            <ol class="sub">
+              <li>Encripta duas vezes o mesmo texto e compara os cifrados. Porque são diferentes?</li>
+              <li>Escreve 318 caracteres ASCII e encripta. Depois 319. (Cuidado: letras acentuadas ocupam 2 bytes em UTF-8.)</li>
+              <li>Faz o mesmo no terminal com o <code>openssl</code> (comandos em <code>docs/passo-a-passo.md</code>) e compara.</li>
+            </ol>
+            <p>O que esta fase deixa por resolver: como sabes que a chave pública que tens é mesmo da pessoa certa? Isso é a PKI (certificados), mencionada na fase 3.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h2 class="titulo-guia" style="margin-top:2.2rem">Em resumo</h2>
+      <p>Um par de chaves tem uma pública (para partilhar) e uma privada (para guardar). Encriptar com a pública só se desfaz com a privada. Assinar com a privada verifica-se com a pública. O RSA só aguenta mensagens pequenas, por isso encripta chaves e não ficheiros.</p>
+
+      <nav class="rodape-fase" aria-label="Navegação entre fases">
+        <a href="../fase-1-simetrica/">← Fase 1, simétrica</a>
+        <a href="../fase-3-hibrida/">Fase 3, híbrida →</a>
+      </nav>
+    </aside>
+  </main>
+
+  <script src="../assets/fase.js"></script>
+  <script src="../assets/util.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
